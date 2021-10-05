@@ -13,20 +13,16 @@ class RWOverlay extends RowiElement {
       height: 100%;
       top: 0;
       left: 0;
-      z-index: 99999;
-      background-color: rgba(${this._defaultColor}, 0);
-      transition: background-color ${this._defaultTransition}ms;
+      z-index: 2147483647;
+      background-color: rgba(${this.props.color.default}, 0);
+      transition: background-color ${this.props.transition.default}ms;
     `
-    this._overlay.addEventListener('click', ev => this.overlayClicked(ev))
+    if (this.intangible) this._overlay.style.pointerEvents = 'none'
+    this._overlayClicked = this.overlayClicked.bind(this)
   }
 
-  connectedCallback () {
-    this._connected = true
-  }
-
-  disconnectedCallback () {
-    this._connected = false
-  }
+  connectedCallback () { this._connected = true }
+  disconnectedCallback () { this._connected = false }
 
   static get observedAttributes () {
     return [
@@ -39,24 +35,28 @@ class RWOverlay extends RowiElement {
   }
 
   get props () {
-    this._defaultColor = '0,0,0'
-    this._defaultTransition = 300
     return {  
       opened: { type: 'boolean', handler () { this.stateChanged() } },
       opacity: { type: 'number', default: 0 },
-      color: { type: 'string', default: this._defaultColor },
+      color: { type: 'string', default: '0,0,0' },
       transition: {
-        type: 'number', default: this._defaultTransition,
-        handler () {
-          this._overlay.style.transition = `background-color ${this.transition}ms`
+        type: 'number', default: 300,
+        handler ({newValue}) {
+          this._overlay.style.transition = `background-color ${newValue}ms`
         }
       },
-      noClosable: { type: 'boolean' }
+      persistent: { type: 'boolean' },
+      intangible: {
+        type: 'boolean',
+        handler ({newValue}) {
+          this._overlay.style.pointerEvents = newValue ? 'none' : null
+        }
+      },
     }
   }
 
   overlayClicked (ev) {
-    if (ev.target === this._overlay && !this.noClosable) {
+    if (ev.target === this._overlay || !this._overlay.contains(ev.target)) {
       this.opened = false
       ev.stopPropagation()
     }
@@ -67,12 +67,21 @@ class RWOverlay extends RowiElement {
     if (this.opened) {
       if (this.children.length === 0) return
       this._content = this.children[0]
+      if (this.intangible && ['', null].includes(this._content.style.pointerEvents)) {
+        this._content.style.pointerEvents = 'auto'
+      }
+      if (!this.persistent) {
+        document.addEventListener('click', this._overlayClicked)
+      }
       this._overlay.append(this._content)
       document.body.append(this._overlay)
       setTimeout(() => {
         this._overlay.style.backgroundColor = `rgba(${this.color}, ${this.opacity})`
       });
     } else {
+      if (!this.persistent) {
+        document.removeEventListener('click', this._overlayClicked)
+      }
       this._overlay.style.backgroundColor = `rgba(${this.color}, 0)`
       setTimeout(() => {
         this.append(this._content)
