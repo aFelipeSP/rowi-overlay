@@ -30,7 +30,8 @@ class RWOverlay extends RowiElement {
       'data-opacity',
       'data-color',
       'data-transition',
-      'data-no-closable'
+      'data-persistent',
+      'data-intangible',
     ]
   }
 
