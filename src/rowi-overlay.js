@@ -1,4 +1,4 @@
-import RowiElement from './node_modules/@rowi/rowi-element/rowi-element.js'
+import RowiElement from '@rowi/rowi-element'
 
 class RWOverlay extends RowiElement {
 
@@ -78,7 +78,7 @@ class RWOverlay extends RowiElement {
       document.body.append(this._overlay)
       setTimeout(() => {
         this._overlay.style.backgroundColor = `rgba(${this.color}, ${this.opacity})`
-      });
+      })
     } else {
       if (!this.persistent) {
         document.removeEventListener('click', this._overlayClicked)
