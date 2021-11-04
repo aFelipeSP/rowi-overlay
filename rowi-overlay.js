@@ -2,14 +2,12 @@
 
 import RowiElement from '@rowi/rowi-element'
 class RWOverlay extends RowiElement {
-  #connected
+  #connected = false
   #overlay
   #content
   #overlayClicked
   constructor () {
     super()
-    this.#connected = false
-    this.style.display = 'none'
     this.#overlay = document.createElement('div')
     this.#overlay.style.cssText = `
       position: fixed;
@@ -25,7 +23,10 @@ class RWOverlay extends RowiElement {
     this.#overlayClicked = this.#_overlayClicked.bind(this)
   }
 
-  connectedCallback () { this.#connected = true }
+  connectedCallback () {
+    this.style.display = 'none'
+    this.#connected = true 
+  }
   disconnectedCallback () { this.#connected = false }
 
   static get observedAttributes () {
@@ -72,7 +73,7 @@ class RWOverlay extends RowiElement {
     if (this.opened) {
       if (this.children.length === 0) return
       this.#content = this.children[0]
-      if (this.intangible && ['', null].includes(this.#content.style.pointerEvents)) {
+      if (this.intangible && this.#content.style.pointerEvents === '') {
         this.#content.style.pointerEvents = 'auto'
       }
       if (!this.persistent) {

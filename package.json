@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/rowi2/rowi-overlay#readme",
   "dependencies": {
-    "@rowi/rowi-element": "^0.1.0"
+    "@rowi/rowi-element": "^0.2.0"
   },
   "devDependencies": {
     "webpack": "^5.58.1",

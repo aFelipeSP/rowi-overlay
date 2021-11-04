@@ -6,4 +6,5 @@ module.exports = {
     filename: 'rowi-overlay.min.js',
     path: path.resolve(__dirname),
   },
+  // optimization: { minimize: false }
 };
