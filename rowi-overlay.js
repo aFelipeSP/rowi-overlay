@@ -6,6 +6,7 @@ class RWOverlay extends RowiElement {
   #overlay
   #content
   #overlayClicked
+  #updateContent
   constructor () {
     super()
     this.#overlay = document.createElement('div')
@@ -21,6 +22,10 @@ class RWOverlay extends RowiElement {
     `
     if (this.intangible) this.#overlay.style.pointerEvents = 'none'
     this.#overlayClicked = this.#_overlayClicked.bind(this)
+
+    this.$buildShadow([ ['slot', {name: 'content'}] ])
+    this.#updateContent = this.#_updateContent.bind(this)
+    this.$.content.addEventListener('slotchange', this.#updateContent)
   }
 
   connectedCallback () {
@@ -68,18 +73,33 @@ class RWOverlay extends RowiElement {
     }
   }
 
+  #_updateContent () {
+    this.#overlay.innerHTML = ''
+    const content = this.$.content.assignedElements({flatten: true})
+    if (content.length !== 1) {
+      console.error('The content of rowi-overlay must be one element, no more'
+        + ' no less. All of the contents of the overlay must be included in '
+        + 'that single element'
+      )
+      return
+    }
+    this.#content = content[0]
+    this.$.content.removeEventListener('slotchange', this.#updateContent)
+    this.#overlay.append(this.#content)
+    setTimeout(() => {
+      this.$.content.addEventListener('slotchange', this.#updateContent)
+    })
+  }
+
   #stateChanged () {
     if (!this.#connected) return
     if (this.opened) {
-      if (this.children.length === 0) return
-      this.#content = this.children[0]
       if (this.intangible && this.#content.style.pointerEvents === '') {
         this.#content.style.pointerEvents = 'auto'
       }
       if (!this.persistent) {
         document.addEventListener('click', this.#overlayClicked)
       }
-      this.#overlay.append(this.#content)
       document.body.append(this.#overlay)
       setTimeout(() => {
         this.#overlay.style.backgroundColor = `rgba(${this.color}, ${this.opacity})`
@@ -89,10 +109,7 @@ class RWOverlay extends RowiElement {
         document.removeEventListener('click', this.#overlayClicked)
       }
       this.#overlay.style.backgroundColor = `rgba(${this.color}, 0)`
-      setTimeout(() => {
-        this.append(this.#content)
-        document.body.removeChild(this.#overlay)
-      }, this.transition)
+      setTimeout(() => document.body.removeChild(this.#overlay), this.transition)
     }
   }
 }
