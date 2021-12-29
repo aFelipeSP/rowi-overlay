@@ -1,117 +1,112 @@
-
-
 import RowiElement from '@rowi/rowi-element'
-class RWOverlay extends RowiElement {
-  #connected = false
-  #overlay
-  #content
-  #overlayClicked
-  #updateContent
-  constructor () {
-    super()
-    this.#overlay = document.createElement('div')
-    this.#overlay.style.cssText = `
+class RowiOverlay extends RowiElement {
+
+  getOverlayStyle () {
+    return /*css*/`
+    :host {
+      display: block;
       position: fixed;
       width: 100%;
       height: 100%;
       top: 0;
       left: 0;
       z-index: 2147483647;
-      background-color: rgba(${this.props.color.default}, 0);
-      transition: background-color ${this.props.transition.default}ms;
+    }
     `
-    if (this.intangible) this.#overlay.style.pointerEvents = 'none'
-    this.#overlayClicked = this.#_overlayClicked.bind(this)
+  }
 
-    this.$buildShadow([ ['slot', {name: 'content'}] ])
-    this.#updateContent = this.#_updateContent.bind(this)
-    this.$.content.addEventListener('slotchange', this.#updateContent)
+  constructor () {
+    super()
+    this._setup()
+    this.$buildShadow([
+      ['style', this.getOverlayStyle()],
+      ['slot', {name: 'content', attrs: {style: 'pointer-events: auto'}}]
+    ])
+  }
+
+  _setup() {
+    this._opened = false
+    this._overlayReady = false
+    this._overlayClicked = this._overlayClicked.bind(this)
+    this._intangibleChanged = this._intangibleChanged.bind(this)
+    this._transitionTimeChanged = this._transitionTimeChanged.bind(this)
   }
 
   connectedCallback () {
-    this.style.display = 'none'
-    this.#connected = true 
+    super.connectedCallback()
+    this._opened = true
+    if (!this._overlayReady) {
+      this._overlayReady = true
+      this._intangibleChanged()
+      this._transitionTimeChanged()
+    }
   }
-  disconnectedCallback () { this.#connected = false }
+
+  disconnectedCallback () { this._opened = false }
 
   static get observedAttributes () {
     return [
-      'data-opened',
       'data-opacity',
       'data-color',
-      'data-transition',
+      'data-transition-time',
       'data-persistent',
       'data-intangible',
     ]
   }
 
   get props () {
-    return {  
-      opened: { type: 'boolean', handler () { this.#stateChanged() } },
+    return {
       opacity: { type: 'number', default: 0 },
       color: { type: 'string', default: '0,0,0' },
-      transition: {
+      transitionTime: {
         type: 'number', default: 300,
-        handler ({newValue}) {
-          this.#overlay.style.transition = `background-color ${newValue}ms`
+        handler ({}) {
+          this._transitionTimeChanged()
         }
       },
       persistent: { type: 'boolean' },
       intangible: {
         type: 'boolean',
-        handler ({newValue}) {
-          this.#overlay.style.pointerEvents = newValue ? 'none' : null
+        handler ({}) {
+          this._intangibleChanged()
         }
       },
     }
   }
 
-  #_overlayClicked (ev) {
-    if (ev.target === this.#overlay || !this.#overlay.contains(ev.target)) {
-      this.opened = false
-      ev.stopPropagation()
+  _overlayClicked (event) {
+    if (event.target === this || !this.contains(event.target)) {
+      this.close()
+      event.stopPropagation()
     }
   }
 
-  #_updateContent () {
-    this.#overlay.innerHTML = ''
-    const content = this.$.content.assignedElements({flatten: true})
-    if (content.length !== 1) {
-      console.error('The content of rowi-overlay must be one element, no more'
-        + ' no less. All of the contents of the overlay must be included in '
-        + 'that single element'
-      )
-      return
+  _intangibleChanged () {
+    this.style.pointerEvents = this.intangible ? 'none' : 'auto'
+  }
+
+  _transitionTimeChanged () {
+    this.style.transition = `background-color ${this.transitionTime}ms`
+  }
+
+  open() {
+    if (this._opened) return
+    if (!this.persistent) {
+      document.addEventListener('click', this._overlayClicked)
     }
-    this.#content = content[0]
-    this.$.content.removeEventListener('slotchange', this.#updateContent)
-    this.#overlay.append(this.#content)
+    document.body.append(this)
     setTimeout(() => {
-      this.$.content.addEventListener('slotchange', this.#updateContent)
+      this.style.backgroundColor = `rgba(${this.color}, ${this.opacity})`
     })
   }
-
-  #stateChanged () {
-    if (!this.#connected) return
-    if (this.opened) {
-      if (this.intangible && this.#content.style.pointerEvents === '') {
-        this.#content.style.pointerEvents = 'auto'
-      }
-      if (!this.persistent) {
-        document.addEventListener('click', this.#overlayClicked)
-      }
-      document.body.append(this.#overlay)
-      setTimeout(() => {
-        this.#overlay.style.backgroundColor = `rgba(${this.color}, ${this.opacity})`
-      })
-    } else {
-      if (!this.persistent) {
-        document.removeEventListener('click', this.#overlayClicked)
-      }
-      this.#overlay.style.backgroundColor = `rgba(${this.color}, 0)`
-      setTimeout(() => document.body.removeChild(this.#overlay), this.transition)
+  close() {
+    if (!this._opened) return
+    if (!this.persistent) {
+      document.removeEventListener('click', this._overlayClicked)
     }
+    this.style.backgroundColor = `rgba(${this.color}, 0)`
+    setTimeout(() => this.remove(), this.transitionTime)
   }
 }
 
-customElements.define("rw-overlay", RWOverlay)
+customElements.define("rw-overlay", RowiOverlay)

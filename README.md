@@ -1,15 +1,8 @@
 # rowi-overlay
 
-A overlay web component. The element (it must be only one element) inside this component will be hidden by default, and when opened, its contents will be shown on top of anything in the document.
+A overlay web component. This element should not be added or removed from the DOM manually, but using its methods `open()` and `close()`. This element contents will be shown on top of anything in the document, when opened. You can tell if the element is opened by checking the property `_opened`.
 
 ## Properties
-
-- `opened`
-    - type: `boolean`
-    - default: `false`.
-    - Description: Property to open or close the overlay.
-    - Attribute: `data-open`.
-    - Event: `$opened`.
 
 - `opacity`
     - type: `number`
@@ -25,12 +18,12 @@ A overlay web component. The element (it must be only one element) inside this c
     - Attribute: `data-color`.
     - Event: `$color`.
 
-- `transition`
+- `transitionTime`
     - type: `number`
     - default: `300`.
     - Description: The time in ms it takes to open and close the overlay.
-    - Attribute: `data-transition`.
-    - Event: `$transition`.
+    - Attribute: `data-transition-time`.
+    - Event: `$transitionTime`.
 
 - `persistent`
     - type: `boolean`
