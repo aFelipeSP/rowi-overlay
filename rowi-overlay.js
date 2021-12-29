@@ -1,5 +1,5 @@
 import RowiElement from '@rowi/rowi-element'
-class RowiOverlay extends RowiElement {
+export default class RowiOverlay extends RowiElement {
 
   getOverlayStyle () {
     return /*css*/`
